@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Showroom - Concessionária</title>
+<style>
+  body{font-family:Arial, sans-serif;background:#f4f4f4;padding:20px;margin:0;}
+  h1{color:#0073e6;}
+  .catalog{display:flex;flex-wrap:wrap;gap:20px;}
+  .card{background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);padding:15px;flex:1 1 300px;cursor:pointer;}
+  .card img{width:100%;border-radius:8px;}
+  .card h2{margin:10px 0 5px 0;color:#0073e6;}
+  .card p{margin:0 0 10px 0;color:#333;}
+  button{padding:10px 15px;border:none;border-radius:8px;background:#0073e6;color:#fff;cursor:pointer;margin-right:5px;}
+  button.secondary{background:#25D366;}
+  .simulator{background:#fff;padding:15px;border-radius:10px;margin-top:20px;max-width:400px;}
+  label{display:block;margin-top:10px;font-size:14px;color:#555;}
+  input,select{width:100%;padding:8px;margin-top:5px;border-radius:6px;border:1px solid #ccc;}
+  .resultado{margin-top:10px;font-weight:bold;color:#0073e6;}
+</style>
+</head>
+<body>
+
+<h1>Showroom - Concessionária Exemplo</h1>
+<p>Toque em um carro para ver detalhes e simular parcelas. Para contato rápido, use o botão "Quero ser contatado".</p>
+
+<div class="catalog">
+  <!-- Carro 1 -->
+  <div class="card" onclick="selectCar(1)">
+    <img src="https://via.placeholder.com/400x200.png?text=Carro+A" alt="Carro A">
+    <h2>Carro A - Versão X</h2>
+    <p>2.0 Turbo • Automático • R$ 120.000</p>
+    <button onclick="event.stopPropagation(); openSim(1)">Simular</button>
+    <button class="secondary" onclick="event.stopPropagation(); whatsappContact(1)">Quero ser contatado</button>
+  </div>
+  <!-- Carro 2 -->
+  <div class="card" onclick="selectCar(2)">
+    <img src="https://via.placeholder.com/400x200.png?text=Carro+B" alt="Carro B">
+    <h2>Carro B - Versão S</h2>
+    <p>1.6 • Manual • R$ 68.900</p>
+    <button onclick="event.stopPropagation(); openSim(2)">Simular</button>
+    <button class="secondary" onclick="event.stopPropagation(); whatsappContact(2)">Quero ser contatado</button>
+  </div>
+  <!-- Carro 3 -->
+  <div class="card" onclick="selectCar(3)">
+    <img src="https://via.placeholder.com/400x200.png?text=Carro+C" alt="Carro C">
+    <h2>Carro C - Versão VIP</h2>
+    <p>1.4 Turbo • Automático • R$ 95.500</p>
+    <button onclick="event.stopPropagation(); openSim(3)">Simular</button>
+    <button class="secondary" onclick="event.stopPropagation(); whatsappContact(3)">Quero ser contatado</button>
+  </div>
+</div>
+
+<div class="simulator" id="simulatorPanel">
+  <h2>Simulador de Parcelas</h2>
+  <label>Preço do veículo (R$)</label>
+  <input type="number" id="preco" readonly>
+
+  <label>Entrada (R$)</label>
+  <input type="number" id="entrada" value="10000">
+
+  <label>Número de parcelas</label>
+  <select id="parcelas">
+    <option value="12">12x</option>
+    <option value="24">24x</option>
+    <option value="36">36x</option>
+    <option value="48">48x</option>
+  </select>
+
+  <label>Juros mensal (%)</label>
+  <input type="number" id="juros" value="1.5" step="0.01" min="0">
+
+  <button onclick="calcular()">Calcular Parcela</button>
+  <div class="resultado" id="resultadoSim"></div>
+  <button style="margin-top:10px;background:#25D366;" onclick="sendWhatsAppFromSim()">Enviar interesse por WhatsApp</button>
+</div>
+
+<script>
+const cars = {
+  1:{title:"Carro A - Versão X", preco:120000},
+  2:{title:"Carro B - Versão S", preco:68900},
+  3:{title:"Carro C - Versão VIP", preco:95500}
+};
+
+const sellerPhone = "55SEUNUMEROCOMDDD"; // Coloque o número da concessionária
+
+function selectCar(id){
+  const car = cars[id];
+  document.getElementById('preco').value = car.preco;
+  document.getElementById('entrada').value = Math.round(car.preco*0.1);
+  document.getElementById('parcelas').value="24";
+  document.getElementById('juros').value="1.5";
+  document.getElementById('resultadoSim').innerHTML="";
+}
+
+function openSim(id){selectCar(id);}
+
+function calcular(){
+  const preco=parseFloat(document.getElementById('preco').value)||0;
+  const entrada=parseFloat(document.getElementById('entrada').value)||0;
+  const parcelas=parseInt(document.getElementById('parcelas').value)||1;
+  const juros=parseFloat(document.getElementById('juros').value)/100||0;
+  const valorFinanciado = Math.max(0, preco-entrada);
+
+  let parcelaValor;
+  if(juros===0){parcelaValor=valorFinanciado/parcelas;}
+  else{
+    const i=juros,n=parcelas;
+    parcelaValor = (valorFinanciado*(i*Math.pow(1+i,n)))/(Math.pow(1+i,n)-1);
+  }
+
+  document.getElementById('resultadoSim').innerHTML=
+    `Parcela: R$ ${parcelaValor.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+}
+
+function whatsappContact(id){
+  const car=cars[id];
+  const text=encodeURIComponent(`Olá, tenho interesse no ${car.title} (R$ ${car.preco.toLocaleString('pt-BR')}).`);
+  window.open(`https://wa.me/${sellerPhone}?text=${text}`,'_blank');
+}
+
+function sendWhatsAppFromSim(){
+  const preco=document.getElementById('preco').value;
+  const entrada=document.getElementById('entrada').value;
+  const parcelas=document.getElementById('parcelas').value;
+  const text=encodeURIComponent(`Olá, tenho interesse no veículo. Preço: R$ ${Number(preco).toLocaleString('pt-BR')}. Entrada: R$ ${Number(entrada).toLocaleString('pt-BR')}. Parcelas: ${parcelas}.`);
+  window.open(`https://wa.me/${sellerPhone}?text=${text}`,'_blank');
+}
+
+// Inicializa com primeiro carro
+selectCar(1);
+</script>
+
+</body>
+</html>
